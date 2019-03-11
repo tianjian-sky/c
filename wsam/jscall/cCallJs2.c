@@ -2,20 +2,28 @@
 #include <stdlib.h>
 #include <emscripten.h>
 
+void add ();
+void error ();
+
+typedef void (*em_callback_func)(void);
+
 int main() {
     int x = EM_ASM_INT({
         return $0 + 42;
     }, 100);
-
+    add();
     int y = EM_ASM_INT(return TOTAL_MEMORY);
+    printf("Total memory is: %d\n", y);
 
-    char *str = (char*)EM_ASM_INT({
-        var jsString = 'Hello with some exotic Unicode characters: Tässä on yksi lumiukko: ☃, ole hyvä.';
-        var lengthBytes = lengthBytesUTF8(jsString)+1; // 'jsString.length' would return the length of the string as UTF-16 units, but Emscripten C strings operate as UTF-8.
-        var stringOnWasmHeap = _malloc(lengthBytes);
-        stringToUTF8(jsString, stringOnWasmHeap, lengthBytes+1);
-        return stringOnWasmHeap;
-    });
-    printf("UTF8 string says: %s\n", str);
-    free(str); // Each call to _malloc() must be paired with free(), or heap memory will leak!
+    char greeting[9] = {'i', 'n', 'd', 'e', 'x', '.', 'j', 's', '\0'};
+
+    emscripten_async_load_script(greeting, add, error);
+}
+
+void add () {
+    printf("c callback func");
+}
+
+void error () {
+    printf("load script error");
 }
